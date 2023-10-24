@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Uebung2_HKA_Nagdaljan</string>
+    <string name="max_mustermann">Max Mustermann</string>
+    <string name="hello_world">Hello World!</string>
+    <string name="klick">Klick!</string>
+    <string name="weiter">Weiter!</string>
+    <string name="michael_nagdaljan">Michael Nagdaljan</string>
+</resources>
