@@ -17,7 +17,5 @@ public class Activity_Weiter extends AppCompatActivity {
         textViewWeiter.setText(MainActivity.getTextViewMiddle().getText());
     }
 
-    public void penis() {
 
-    }
 }

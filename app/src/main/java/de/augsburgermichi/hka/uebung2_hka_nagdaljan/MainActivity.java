@@ -3,6 +3,7 @@ package de.augsburgermichi.hka.uebung2_hka_nagdaljan;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -14,6 +15,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Button button_click;
     private Button button_weiter;
+    private Button button_map;
+
     private static TextView textViewMiddle;
     private String[] listOfRandomWords = new String[6];
 
@@ -25,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
 
         button_click = this.findViewById(R.id.btn_click);
         button_weiter = this.findViewById(R.id.btn_next);
+        button_map = this.findViewById(R.id.btn_map);
+
         textViewMiddle = this.findViewById(R.id.txtMessage);
 
         listOfRandomWords[0] = "Heute ist ein schöner Tag!";
@@ -42,6 +47,11 @@ public class MainActivity extends AppCompatActivity {
         button_weiter.setOnClickListener(view -> {
             Intent activity_weiter = new Intent(this, Activity_Weiter.class);
             this.startActivity(activity_weiter);
+        });
+
+        button_map.setOnClickListener(view -> {
+            Intent activity_map = new Intent(this, MapActivity.class);
+            this.startActivity(activity_map);
         });
 
     }
