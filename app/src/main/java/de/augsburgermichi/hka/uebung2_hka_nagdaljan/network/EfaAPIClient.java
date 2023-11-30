@@ -1,5 +1,7 @@
 package de.augsburgermichi.hka.uebung2_hka_nagdaljan.network;
 
+import android.util.Log;
+
 import java.util.Locale;
 
 import retrofit2.Retrofit;
@@ -27,7 +29,10 @@ public class EfaAPIClient
     }
 
     public String createCoordinateString(double latitude, double longitude) {
-        return String.format(Locale.ENGLISH, "%f:%f:WGS84[dd.ddddd]", longitude, latitude);
+
+        String format = String.format(Locale.ENGLISH, "%f:%f:WGS84[dd.ddddd]", longitude, latitude);
+        Log.d("MapActivity", "Huan " + format);
+        return format;
     }
 
     public EfaAPI getClient() {

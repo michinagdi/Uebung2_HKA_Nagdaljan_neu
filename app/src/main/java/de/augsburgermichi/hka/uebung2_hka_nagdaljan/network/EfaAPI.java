@@ -1,6 +1,6 @@
 package de.augsburgermichi.hka.uebung2_hka_nagdaljan.network;
 
-import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objects.EfaCoordResponse;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa.EfaCoordResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;

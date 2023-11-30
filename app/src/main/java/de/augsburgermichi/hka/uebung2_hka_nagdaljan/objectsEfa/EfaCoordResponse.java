@@ -1,6 +1,7 @@
-package de.augsburgermichi.hka.uebung2_hka_nagdaljan.objects;
+package de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa;
 
 import android.location.Location;
+import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -19,6 +20,9 @@ public class EfaCoordResponse
     }
 
     public List<Location> getLocations() {
+
+        Log.d("MapActivity", locations.toString());
+
         return locations;
     }
 }

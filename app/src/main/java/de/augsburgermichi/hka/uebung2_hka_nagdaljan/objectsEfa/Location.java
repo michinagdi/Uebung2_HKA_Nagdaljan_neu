@@ -1,4 +1,6 @@
-package de.augsburgermichi.hka.uebung2_hka_nagdaljan.objects;
+package de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa;
+
+import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -19,11 +21,15 @@ public class Location
     @SerializedName("properties")
     public LocationProperties properties;
 
+
+
     public String getId() {
+        Log.d("MapActivity", id);
         return id;
     }
 
     public String getName() {
+        Log.d("MapActivity", name);
         return name;
     }
 

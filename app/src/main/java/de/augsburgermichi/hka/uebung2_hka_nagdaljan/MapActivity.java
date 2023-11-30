@@ -23,11 +23,19 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
+import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPI;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPIClient;
-import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objects.EfaCoordResponse;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.NextbikeAPIClient;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa.EfaCoordResponse;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.City;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.Country;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.NextbikeResponse;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.Place;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -65,15 +73,18 @@ public class MapActivity extends AppCompatActivity {
             @Override
             public boolean onScroll(ScrollEvent event) {
                 loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
                 return false;
             }
 
             @Override
             public boolean onZoom(ZoomEvent event) {
                 loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
                 return false;
             }
         });
+
     }
 
     @Override
@@ -135,7 +146,7 @@ public class MapActivity extends AppCompatActivity {
                                         latitude,
                                         longitude
                                 ),
-                        10000
+                        1000
                 );
 
         efaCall.enqueue(new Callback<EfaCoordResponse>() {
@@ -150,4 +161,41 @@ public class MapActivity extends AppCompatActivity {
             }
         });
     }
+
+    public void loadNextbikes(double latitude, double longitude) {
+
+        Call<NextbikeResponse> nextbikeCall = NextbikeAPIClient
+                .getInstance()
+                .getClient()
+                .loadNextbikesWithinRadius(Double.toString(latitude), Double.toString(longitude), Integer.toString(1000));
+
+
+
+        nextbikeCall.enqueue(new Callback<NextbikeResponse>() {
+            @Override
+            public void onResponse(Call<NextbikeResponse> call, Response<NextbikeResponse> response) {
+
+                int bikeAmount = 0;
+
+                for (Country country : response.body().getCountries()) {
+                    for (City city : country.getCities()) {
+                        for (Place place : city.getPlaces()) {
+                            bikeAmount = bikeAmount + place.getBikesAmount();
+                        }
+                    }
+                }
+
+                Log.d("MapActivity", "Anzahl Nextbikes im Radius: " + bikeAmount);
+                Log.d("MapActivity", String.valueOf(response.raw()));
+            }
+
+            @Override
+            public void onFailure(Call<NextbikeResponse> call, Throwable t) {
+
+            }
+        });
+    }
+
+
+
 }
