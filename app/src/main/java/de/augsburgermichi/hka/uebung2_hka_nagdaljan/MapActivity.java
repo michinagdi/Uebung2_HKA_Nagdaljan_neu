@@ -1,15 +1,16 @@
 package de.augsburgermichi.hka.uebung2_hka_nagdaljan;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.nabinbhandari.android.permissions.PermissionHandler;
 import com.nabinbhandari.android.permissions.Permissions;
@@ -22,13 +23,11 @@ import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
-import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPI;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.NextbikeAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa.EfaCoordResponse;
@@ -44,6 +43,7 @@ public class MapActivity extends AppCompatActivity {
 
     private LocationManager locationManager;
     private MapView mapView;
+    private Marker startMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +66,16 @@ public class MapActivity extends AppCompatActivity {
 
         GeoPoint startPoint = new GeoPoint(49.0069, 8.4037);
         IMapController mapController = mapView.getController();
-        mapController.setZoom(14.0);
+        mapController.setZoom(17.0);
         mapController.setCenter(startPoint);
+
+        startMarker = new Marker(mapView);
+        startMarker.setPosition(startPoint);
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
+        //startMarker.setTextIcon("Du bist hier!");
+        startMarker.setTitle("Du bist hier!");
+        startMarker.setIcon(getResources().getDrawable(R.mipmap.gps_punkt, getTheme()));
+        mapView.getOverlays().add(startMarker);
 
         this.mapView.addMapListener(new MapListener() {
             @Override
@@ -122,6 +130,8 @@ public class MapActivity extends AppCompatActivity {
 
             IMapController mapController = mapView.getController();
             mapController.setCenter(startPoint);
+            startMarker.setPosition(startPoint);
+
         };
 
         this.locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -153,6 +163,7 @@ public class MapActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<EfaCoordResponse> call, Response<EfaCoordResponse> response) {
                 Log.d("MapActivity", String.format("Response %d Locations", response.body().getLocations().size()));
+                Log.d("MapActivity", String.valueOf(response.raw()));
             }
 
             @Override
@@ -181,6 +192,12 @@ public class MapActivity extends AppCompatActivity {
                     for (City city : country.getCities()) {
                         for (Place place : city.getPlaces()) {
                             bikeAmount = bikeAmount + place.getBikesAmount();
+                            Marker bikeMarker = new Marker(mapView);
+                            bikeMarker.setPosition(new GeoPoint(place.getLat(), place.getLng()));
+                            bikeMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
+                            bikeMarker.setTitle("Nextbike " + place.getName());
+                            bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike, getTheme()));
+                            mapView.getOverlays().add(bikeMarker);
                         }
                     }
                 }
