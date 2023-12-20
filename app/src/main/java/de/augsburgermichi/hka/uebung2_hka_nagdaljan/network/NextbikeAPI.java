@@ -8,5 +8,7 @@ import retrofit2.http.Query;
 public interface NextbikeAPI {
 
     @GET("maps/nextbike-live.json")
-    Call<NextbikeResponse> loadNextbikesWithinRadius(@Query("lat") String latitude, @Query("lng") String longitude, @Query("distance") String radius);
+    Call<NextbikeResponse> loadNextbikesWithinRadius(@Query("lat") String latitude,
+                                                     @Query("lng") String longitude,
+                                                     @Query("distance") String radius);
 }

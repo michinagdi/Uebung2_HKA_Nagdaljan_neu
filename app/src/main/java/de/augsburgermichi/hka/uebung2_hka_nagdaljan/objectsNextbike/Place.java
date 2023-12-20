@@ -19,6 +19,13 @@ public class Place {
     @SerializedName("name")
     public String name;
 
+    @SerializedName("dist")
+    public String distance;
+
+    public String getDistance() {
+        return distance;
+    }
+
     public double getLat() {
         return lat;
     }

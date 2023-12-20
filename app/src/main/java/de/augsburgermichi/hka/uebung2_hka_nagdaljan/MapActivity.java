@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
@@ -27,10 +26,12 @@ import org.osmdroid.views.overlay.Marker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.NextbikeAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa.EfaCoordResponse;
+import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsEfa.Location;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.City;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.Country;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.objectsNextbike.NextbikeResponse;
@@ -44,6 +45,10 @@ public class MapActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private MapView mapView;
     private Marker startMarker;
+    private List<GeoPoint> bikesOnMap = new ArrayList<>();
+    private List<GeoPoint> oepnvOnMap = new ArrayList<>();
+    IMapController mapController;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,30 +70,46 @@ public class MapActivity extends AppCompatActivity {
         mapView.setTileSource(mapServer);
 
         GeoPoint startPoint = new GeoPoint(49.0069, 8.4037);
-        IMapController mapController = mapView.getController();
+        mapController = mapView.getController();
         mapController.setZoom(17.0);
         mapController.setCenter(startPoint);
 
         startMarker = new Marker(mapView);
         startMarker.setPosition(startPoint);
         startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
-        //startMarker.setTextIcon("Du bist hier!");
         startMarker.setTitle("Du bist hier!");
         startMarker.setIcon(getResources().getDrawable(R.mipmap.gps_punkt, getTheme()));
         mapView.getOverlays().add(startMarker);
 
+        mapView.setMinZoomLevel(15.0);
+        mapView.setMultiTouchControls(true);
+
         this.mapView.addMapListener(new MapListener() {
+
+            int antiLagProtection = 0;
             @Override
             public boolean onScroll(ScrollEvent event) {
-                loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
-                loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+
+                if (antiLagProtection >= 40) {
+                    loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                    loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                    antiLagProtection = 0;
+                    return false;
+                }
+                antiLagProtection++;
                 return false;
             }
 
             @Override
             public boolean onZoom(ZoomEvent event) {
-                loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
-                loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+
+                if (antiLagProtection >= 40) {
+                    loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                    loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+                    antiLagProtection = 0;
+                    return false;
+                }
+                antiLagProtection++;
                 return false;
             }
         });
@@ -164,6 +185,30 @@ public class MapActivity extends AppCompatActivity {
             public void onResponse(Call<EfaCoordResponse> call, Response<EfaCoordResponse> response) {
                 Log.d("MapActivity", String.format("Response %d Locations", response.body().getLocations().size()));
                 Log.d("MapActivity", String.valueOf(response.raw()));
+
+                for (Location location : response.body().getLocations()) {
+                    double[] doubleCoord = location.getCoordinates();
+                    GeoPoint oepnvPosition = new GeoPoint(doubleCoord[0], doubleCoord[1]);
+
+                    if (!bikesOnMap.contains(oepnvPosition)) {
+                        bikesOnMap.add(oepnvPosition);
+
+                        Marker oepnvMarker = new Marker(mapView);
+                        oepnvMarker.setPosition(oepnvPosition);
+                        oepnvMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
+                        oepnvMarker.setTitle("Haltestelle: " + location.getName());
+                        oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.station, getTheme()));
+
+                        mapView.getOverlays().add(oepnvMarker);
+
+                        oepnvMarker.setOnMarkerClickListener((marker, mapView) -> {
+                            marker.showInfoWindow();
+                            mapController.zoomTo(17.0);
+                            mapController.animateTo(marker.getPosition());
+                            return false;
+                        });
+                    }
+                }
             }
 
             @Override
@@ -191,13 +236,28 @@ public class MapActivity extends AppCompatActivity {
                 for (Country country : response.body().getCountries()) {
                     for (City city : country.getCities()) {
                         for (Place place : city.getPlaces()) {
-                            bikeAmount = bikeAmount + place.getBikesAmount();
-                            Marker bikeMarker = new Marker(mapView);
-                            bikeMarker.setPosition(new GeoPoint(place.getLat(), place.getLng()));
-                            bikeMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
-                            bikeMarker.setTitle("Nextbike " + place.getName());
-                            bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike, getTheme()));
-                            mapView.getOverlays().add(bikeMarker);
+                            GeoPoint bikePostition = new GeoPoint(place.getLat(), place.getLng());
+
+                            if (!bikesOnMap.contains(bikePostition)) {
+                                bikesOnMap.add(bikePostition);
+                                double distanceDouble = Double.parseDouble(place.getDistance());
+                                int distance = (int) distanceDouble;
+                                bikeAmount = bikeAmount + place.getBikesAmount();
+
+                                Marker bikeMarker = new Marker(mapView);
+                                bikeMarker.setPosition(bikePostition);
+                                bikeMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
+                                bikeMarker.setTitle("Nextbike " + place.getName() + "\n" + "Entfernung: " + distance + " Meter");
+                                bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike, getTheme()));
+
+
+                                mapView.getOverlays().add(bikeMarker);
+
+
+
+                                /*Log.d("MapActivity", "Anzahl Marker in List: " + markersOnMap.size());
+                                Log.d("MapActivity", "Anzahl Overlays: " + mapView.getOverlays().size());*/
+                            }
                         }
                     }
                 }
