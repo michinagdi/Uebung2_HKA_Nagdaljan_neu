@@ -8,12 +8,16 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.nabinbhandari.android.permissions.PermissionHandler;
 import com.nabinbhandari.android.permissions.Permissions;
 
+// import org.json.simple.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.events.MapListener;
@@ -24,9 +28,11 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.NextbikeAPIClient;
@@ -45,15 +51,30 @@ public class MapActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private MapView mapView;
     private Marker startMarker;
-    private List<GeoPoint> bikesOnMap = new ArrayList<>();
-    private List<GeoPoint> oepnvOnMap = new ArrayList<>();
+    private ArrayList<GeoPoint> bikesOnMap = new ArrayList<>();
+    private ArrayList<GeoPoint> oepnvOnMap = new ArrayList<>();
     IMapController mapController;
+    JSONObject jsonObject = new JSONObject();
+    private Button button_refresh;
+
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+        button_refresh = this.findViewById(R.id.btn_refresh);
+
+        /*try {
+            testen();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }*/
+
 
         XYTileSource mapServer = new XYTileSource("MapName",
                 8,
@@ -112,6 +133,11 @@ public class MapActivity extends AppCompatActivity {
                 antiLagProtection++;
                 return false;
             }
+        });
+
+        button_refresh.setOnClickListener(view -> {
+            loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+            loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
         });
 
     }
@@ -190,8 +216,8 @@ public class MapActivity extends AppCompatActivity {
                     double[] doubleCoord = location.getCoordinates();
                     GeoPoint oepnvPosition = new GeoPoint(doubleCoord[0], doubleCoord[1]);
 
-                    if (!bikesOnMap.contains(oepnvPosition)) {
-                        bikesOnMap.add(oepnvPosition);
+                    if (!oepnvOnMap.contains(oepnvPosition)) {
+                        oepnvOnMap.add(oepnvPosition);
 
                         Marker oepnvMarker = new Marker(mapView);
                         oepnvMarker.setPosition(oepnvPosition);
@@ -237,12 +263,13 @@ public class MapActivity extends AppCompatActivity {
                     for (City city : country.getCities()) {
                         for (Place place : city.getPlaces()) {
                             GeoPoint bikePostition = new GeoPoint(place.getLat(), place.getLng());
+                            GeoPoint gpsPosition = new GeoPoint(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
 
                             if (!bikesOnMap.contains(bikePostition)) {
                                 bikesOnMap.add(bikePostition);
-                                double distanceDouble = Double.parseDouble(place.getDistance());
+                                double distanceDouble = calculateDistance(bikePostition, startMarker.getPosition());
                                 int distance = (int) distanceDouble;
-                                bikeAmount = bikeAmount + place.getBikesAmount();
+                                bikeAmount += place.getBikesAmount();
 
                                 Marker bikeMarker = new Marker(mapView);
                                 bikeMarker.setPosition(bikePostition);
@@ -250,13 +277,7 @@ public class MapActivity extends AppCompatActivity {
                                 bikeMarker.setTitle("Nextbike " + place.getName() + "\n" + "Entfernung: " + distance + " Meter");
                                 bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike, getTheme()));
 
-
                                 mapView.getOverlays().add(bikeMarker);
-
-
-
-                                /*Log.d("MapActivity", "Anzahl Marker in List: " + markersOnMap.size());
-                                Log.d("MapActivity", "Anzahl Overlays: " + mapView.getOverlays().size());*/
                             }
                         }
                     }
@@ -266,12 +287,56 @@ public class MapActivity extends AppCompatActivity {
                 Log.d("MapActivity", String.valueOf(response.raw()));
             }
 
+
             @Override
             public void onFailure(Call<NextbikeResponse> call, Throwable t) {
 
             }
         });
+
     }
+
+    private double calculateDistance(GeoPoint point1, GeoPoint point2) {
+        double lat1 = Math.toRadians(point1.getLatitude());
+        double lon1 = Math.toRadians(point1.getLongitude());
+        double lat2 = Math.toRadians(point2.getLatitude());
+        double lon2 = Math.toRadians(point2.getLongitude());
+
+        // Haversine-Formel
+        double dlat = lat2 - lat1;
+        double dlon = lon2 - lon1;
+        double a = Math.pow(Math.sin(dlat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dlon / 2), 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        // Erdradius in Metern (kann je nach Anwendung angepasst werden)
+        double radius = 6371000;
+
+        // Berechne die Entfernung
+        return radius * c;
+    }
+
+    /*public int calcMobilityScore(ArrayList<GeoPoint> bikeLocations, ArrayList<GeoPoint> efaLocations, HashMap<GeoPoint, int[]> efaHashMap) throws JSONException, IOException {
+
+        jsonObject.put("deine Mutter", "stinkt");
+        FileWriter file = new FileWriter("java/de/augsburgermichi/hka/uebung2_hka_nagdaljan/dataSave.json");
+        file.write(jsonObject.toString());
+        file.close();
+
+        Log.d("MapActivity", "JSONPenis: " + file.getEncoding());
+
+
+        return 0;
+    }*/
+
+    /*public void testen() throws JSONException, IOException {
+
+        jsonObject.put("deine Mutter", "stinkt");
+        FileWriter file = new FileWriter(R.xml.);
+        file.write(jsonObject.toString());
+        file.close();
+
+        Log.d("MapActivity", "JSONPenis: " + file.getEncoding());
+    }*/
 
 
 
