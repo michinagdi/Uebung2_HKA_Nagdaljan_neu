@@ -2,22 +2,23 @@ package de.augsburgermichi.hka.uebung2_hka_nagdaljan;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.nabinbhandari.android.permissions.PermissionHandler;
 import com.nabinbhandari.android.permissions.Permissions;
 
-// import org.json.simple.JSONObject;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.events.MapListener;
@@ -28,11 +29,11 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.OptionalInt;
 
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.EfaAPIClient;
 import de.augsburgermichi.hka.uebung2_hka_nagdaljan.network.NextbikeAPIClient;
@@ -46,6 +47,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+
+
 public class MapActivity extends AppCompatActivity {
 
     private LocationManager locationManager;
@@ -53,10 +56,10 @@ public class MapActivity extends AppCompatActivity {
     private Marker startMarker;
     private ArrayList<GeoPoint> bikesOnMap = new ArrayList<>();
     private ArrayList<GeoPoint> oepnvOnMap = new ArrayList<>();
+    private HashMap<GeoPoint, Integer> stationsHashMap = new HashMap<>();
     IMapController mapController;
-    JSONObject jsonObject = new JSONObject();
     private Button button_refresh;
-
+    private Button button_mobScore;
 
 
 
@@ -66,14 +69,8 @@ public class MapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_map);
 
         button_refresh = this.findViewById(R.id.btn_refresh);
+        button_mobScore = this.findViewById(R.id.btn_mobscore);
 
-        /*try {
-            testen();
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }*/
 
 
         XYTileSource mapServer = new XYTileSource("MapName",
@@ -104,6 +101,7 @@ public class MapActivity extends AppCompatActivity {
 
         mapView.setMinZoomLevel(15.0);
         mapView.setMultiTouchControls(true);
+        mapView.setBuiltInZoomControls(false);
 
         this.mapView.addMapListener(new MapListener() {
 
@@ -135,10 +133,38 @@ public class MapActivity extends AppCompatActivity {
             }
         });
 
+
+
         button_refresh.setOnClickListener(view -> {
             loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
             loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
         });
+
+        button_mobScore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+
+                //Set title for AlertDialog
+                builder.setTitle("DuckMove App");
+
+                //Set body message of Dialog
+                builder.setMessage("Dein Mobilitätsscore: " + calcMobilityScore(bikesOnMap, oepnvOnMap, stationsHashMap));
+
+                // Is dismiss when touching outside?
+                builder.setCancelable(false);
+
+                //Positive Button and it onClicked event listener
+                builder.setPositiveButton("Fertig", (dialogInterface, i) -> {
+
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+
+
 
     }
 
@@ -163,6 +189,9 @@ public class MapActivity extends AppCompatActivity {
                 Log.d("MapActivity", "onDenied");
             }
         });
+
+        loadClosestStops(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
+        loadNextbikes(mapView.getMapCenter().getLatitude(), mapView.getMapCenter().getLongitude());
     }
 
     @SuppressLint("MissingPermission")
@@ -219,11 +248,31 @@ public class MapActivity extends AppCompatActivity {
                     if (!oepnvOnMap.contains(oepnvPosition)) {
                         oepnvOnMap.add(oepnvPosition);
 
+                        OptionalInt highestProductTypeOI = Arrays.stream(location.getProductClasses()).min();
+                        int highestProductType = highestProductTypeOI.getAsInt();
+                        stationsHashMap.put(oepnvPosition, highestProductType);
+
                         Marker oepnvMarker = new Marker(mapView);
                         oepnvMarker.setPosition(oepnvPosition);
                         oepnvMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
-                        oepnvMarker.setTitle("Haltestelle: " + location.getName());
-                        oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.station, getTheme()));
+                        oepnvMarker.setTitle("Haltestelle: " + location.getName() + "\n" + "Typ: " + highestProductType);
+
+                        switch (highestProductType) {
+                            case 0:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.db_logo, getTheme())); break;
+                            case 1:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.sbahn_logo, getTheme())); break;
+                            case 2:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.ubahn_logo, getTheme())); break;
+                            case 3:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.stadtbahn_logo, getTheme())); break;
+                            case 4:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.tram_logo, getTheme())); break;
+                            case 5:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.bus_logo, getTheme())); break;
+                            default:
+                                oepnvMarker.setIcon(getResources().getDrawable(R.mipmap.station, getTheme())); break;
+                        }
 
                         mapView.getOverlays().add(oepnvMarker);
 
@@ -253,7 +302,9 @@ public class MapActivity extends AppCompatActivity {
 
 
 
+
         nextbikeCall.enqueue(new Callback<NextbikeResponse>() {
+            @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             public void onResponse(Call<NextbikeResponse> call, Response<NextbikeResponse> response) {
 
@@ -267,15 +318,12 @@ public class MapActivity extends AppCompatActivity {
 
                             if (!bikesOnMap.contains(bikePostition)) {
                                 bikesOnMap.add(bikePostition);
-                                double distanceDouble = calculateDistance(bikePostition, startMarker.getPosition());
-                                int distance = (int) distanceDouble;
                                 bikeAmount += place.getBikesAmount();
 
                                 Marker bikeMarker = new Marker(mapView);
                                 bikeMarker.setPosition(bikePostition);
-                                bikeMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
-                                bikeMarker.setTitle("Nextbike " + place.getName() + "\n" + "Entfernung: " + distance + " Meter");
-                                bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike, getTheme()));
+                                bikeMarker.setTitle("Nextbike " + place.getName());
+                                bikeMarker.setIcon(getResources().getDrawable(R.mipmap.bike_logo, getTheme()));
 
                                 mapView.getOverlays().add(bikeMarker);
                             }
@@ -290,7 +338,7 @@ public class MapActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<NextbikeResponse> call, Throwable t) {
-
+                Log.d("MapActivity", "Failure");
             }
         });
 
@@ -315,28 +363,55 @@ public class MapActivity extends AppCompatActivity {
         return radius * c;
     }
 
-    /*public int calcMobilityScore(ArrayList<GeoPoint> bikeLocations, ArrayList<GeoPoint> efaLocations, HashMap<GeoPoint, int[]> efaHashMap) throws JSONException, IOException {
+    public int calcMobilityScore(ArrayList<GeoPoint> bikeLocations, ArrayList<GeoPoint> efaLocations, HashMap<GeoPoint, Integer> efaHashMap)  {
 
-        jsonObject.put("deine Mutter", "stinkt");
-        FileWriter file = new FileWriter("java/de/augsburgermichi/hka/uebung2_hka_nagdaljan/dataSave.json");
-        file.write(jsonObject.toString());
-        file.close();
+        double mobilityScore = 0d;
+        double bikeScore = 0d;
+        double efaScore = 0d;
 
-        Log.d("MapActivity", "JSONPenis: " + file.getEncoding());
+        ArrayList<GeoPoint> bikeinRadius = new ArrayList<>();
+        ArrayList<GeoPoint> efainRadius = new ArrayList<>();
 
+        //min. 50m - max. 550m
+        double maxLaufenDistance = 50.0d * (((double) MainActivity.getLaufenValue() / 10.0d) + 1.0d);
 
-        return 0;
-    }*/
+        for (GeoPoint bikeLocation : bikeLocations) {
+            if (calculateDistance(bikeLocation, startMarker.getPosition()) < maxLaufenDistance) {
+                bikeinRadius.add(bikeLocation);
+            }
+        }
+        for (GeoPoint efaLocation : efaLocations) {
+            if (calculateDistance(efaLocation, startMarker.getPosition()) < maxLaufenDistance) {
+                efainRadius.add(efaLocation);
+            }
+        }
 
-    /*public void testen() throws JSONException, IOException {
+        if (MainActivity.isNextbikeBoolean()) {
+            bikeScore = (bikeinRadius.size() * 10d) * 1.5d;
+        } else {
+            bikeScore = (bikeinRadius.size() * 10d);
+        }
 
-        jsonObject.put("deine Mutter", "stinkt");
-        FileWriter file = new FileWriter(R.xml.);
-        file.write(jsonObject.toString());
-        file.close();
+        for (GeoPoint station : efainRadius) {
+            switch (efaHashMap.get(station)) {
+                case 0: efaScore += 60d; break;
+                case 1: efaScore += 30d; break;
+                case 2:
+                case 3:
+                    efaScore += 25d; break;
+                case 4: efaScore += 15d; break;
+                case 5: efaScore += 10d; break;
+            }
+        }
 
-        Log.d("MapActivity", "JSONPenis: " + file.getEncoding());
-    }*/
+        if (MainActivity.isOpnvBoolean()) {
+            efaScore = efaScore * 1.5d;
+        }
+
+        mobilityScore = efaScore + bikeScore;
+
+        return (int) mobilityScore;
+    }
 
 
 

@@ -14,7 +14,6 @@ public class Activity_Weiter extends AppCompatActivity {
         setContentView(R.layout.activity_weiter);
 
         textViewWeiter = this.findViewById(R.id.txtMessageWeiter);
-        textViewWeiter.setText(MainActivity.getTextViewMiddle().getText());
     }
 
 

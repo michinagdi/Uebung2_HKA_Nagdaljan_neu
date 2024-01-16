@@ -8,65 +8,123 @@
     tools:context=".MainActivity">
 
     <LinearLayout
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/icon_person"
-            app:tint="@color/grau" />
+        android:orientation="vertical">
 
         <TextView
+            android:layout_marginTop="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/michael_nagdaljan"
+            android:text="DuckMove App - Mobilität ist Federleicht!"
+            android:textAlignment="center"
             android:textSize="26sp" />
+
+        <TextView
+
+            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Wähle hier deine Mobilitätspreferenzen aus!"
+            android:textAlignment="center"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_marginTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+
+            <CheckBox
+                android:id="@+id/opnvCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ich besitze ein ÖPNV-Abonnement"
+                android:textAlignment="center" />
+
+            <CheckBox
+                android:id="@+id/nextbikeCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ich habe einen kostenlosen Nextbike Zugang"
+                android:textAlignment="center" />
+
+            <TextView
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Wieviel bist du denn bereit zu laufen?"
+                android:textAlignment="center"
+                android:textSize="15sp" />
+
+
+            <LinearLayout
+                android:layout_marginTop="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="22dp"
+                    android:text="wenig"
+                    android:textAlignment="center"
+                    android:textSize="15sp" />
+
+                <SeekBar
+                    android:id="@+id/seekBarLaufen"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:text="viel"
+                    android:textAlignment="center"
+                    android:textSize="15sp" />
+
+            </LinearLayout>
+
+            <Button
+                android:layout_margin="22dp"
+                android:id="@+id/buttonSave"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speichern!" />
+
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ente"
+            android:layout_width="match_parent"
+            android:layout_height="258dp"
+            android:src="@drawable/dancing_duck" />
+
+
 
     </LinearLayout>
 
-    <TextView
-
-        android:id="@+id/txtMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="@string/hello_world"
-        android:textSize="26sp" />
 
     <Button
         android:id="@+id/btn_map"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/btn_click"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/karte" />
-
-    <Button
-        android:id="@+id/btn_click"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/btn_next"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/klick" />
-
-
-    <Button
-        android:id="@+id/btn_next"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="@string/weiter" />
+        android:text="Hier geht's zur Karte!"
+        android:textSize="20sp" />
+
 
 </RelativeLayout>
