@@ -33,18 +33,36 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] listOfRandomWords = new String[6];
 
+    /**
+     * Getter Methode zum Übertragen von Variablen an andere Klassen bzw. Activities
+     */
     public static boolean isOpnvBoolean() {
         return opnvBoolean;
     }
 
+    /**
+     * Getter Methode zum Übertragen von Variablen an andere Klassen bzw. Activities
+     */
     public static boolean isNextbikeBoolean() {
         return nextbikeBoolean;
     }
 
+    /**
+     * Getter Methode zum Übertragen von Variablen an andere Klassen bzw. Activities
+     */
     public static int getLaufenValue() {
         return laufenValue;
     }
 
+
+    /**
+     * Diese Methode wird aufgerufen, wenn die MainActivity erstellt wird.
+     * Hier werden Layout-Ressourcen initialisiert, Views referenziert
+     * und Click-Listener für Buttons eingerichtet. Außerdem wird eine Log-Nachricht ausgegeben.
+     * Der Button {@link MainActivity#button_map} startet die MapActivity beim Klicken.
+     * Der Button {@link MainActivity#saveButton} liest den Zustand von Checkboxen und den Fortschritt
+     * einer SeekBar aus und speichert die Werte in entsprechenden Variablen.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
